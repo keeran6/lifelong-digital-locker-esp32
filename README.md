@@ -2,16 +2,10 @@
 
 ## 🎯 Choose Your Board
 
-You now have **TWO complete implementations** of the digital safe locker:
+You now have **Complete implementations** of the digital safe locker:
 
-### Option 1: ESP32 Pico DevKit
-- **Cost:** $31-55 total
-- **Best for:** Budget builds, compact size
-- **BLE Range:** 10-30 meters
-- **Memory:** 520KB RAM, 4MB Flash
-- **Battery Life:** 2-3 months
 
-### Option 2: LILYGO T8 V1.7 ⭐ RECOMMENDED
+### LILYGO T8 V1.7 ⭐ RECOMMENDED
 - **Cost:** $38-63 total (+$7-8)
 - **Best for:** Reliability, advanced features
 - **BLE Range:** 30-50 meters
@@ -23,43 +17,36 @@ You now have **TWO complete implementations** of the digital safe locker:
 
 ---
 
-## 📦 All Project Files (16 Total!)
-
-### 🔷 ESP32 Pico DevKit Files
-
-**Code:**
-1. [digital_safe_locker.py](computer:///mnt/user-data/outputs/digital_safe_locker.py) - Main code for Pico
-2. [digital_safe_locker_battery_optimized.py](computer:///mnt/user-data/outputs/digital_safe_locker_battery_optimized.py) - Battery optimized
+## 📦 All Project Files (13 Total!)
 
 **Documentation:**
-3. [QUICK_REFERENCE.md](computer:///mnt/user-data/outputs/QUICK_REFERENCE.md) - Pico wiring guide
-4. [circuit_diagram.html](computer:///mnt/user-data/outputs/circuit_diagram.html) - Pico visual diagram
-5. [INSTALLATION_GUIDE.md](computer:///mnt/user-data/outputs/INSTALLATION_GUIDE.md) - Complete setup guide
-6. [PROJECT_SUMMARY.md](computer:///mnt/user-data/outputs/PROJECT_SUMMARY.md) - Pico project summary
+
+ [INSTALLATION_GUIDE.md](computer:///mnt/user-data/outputs/INSTALLATION_GUIDE.md) - Complete setup guide
+
 
 ### 🔶 LILYGO T8 V1.7 Files
 
 **Code:**
-7. [digital_safe_locker_T8.py](computer:///mnt/user-data/outputs/digital_safe_locker_T8.py) - Main code for T8
-8. [digital_safe_locker_T8_battery_optimized.py](computer:///mnt/user-data/outputs/digital_safe_locker_T8_battery_optimized.py) - T8 battery optimized
+ [digital_safe_locker_T8.py](computer:///mnt/user-data/outputs/digital_safe_locker_T8.py) - Main code for T8
+ [digital_safe_locker_T8_battery_optimized.py](computer:///mnt/user-data/outputs/digital_safe_locker_T8_battery_optimized.py) - T8 battery optimized
 
 **Documentation:**
-9. [LILYGO_T8_WIRING_GUIDE.md](computer:///mnt/user-data/outputs/LILYGO_T8_WIRING_GUIDE.md) - Complete T8 guide
-10. [circuit_diagram_T8.html](computer:///mnt/user-data/outputs/circuit_diagram_T8.html) - T8 visual diagram
-11. [LILYGO_T8_COMPARISON.md](computer:///mnt/user-data/outputs/LILYGO_T8_COMPARISON.md) - Pico vs T8 comparison
-12. [PROJECT_SUMMARY_T8.md](computer:///mnt/user-data/outputs/PROJECT_SUMMARY_T8.md) - T8 project summary
+ [LILYGO_T8_WIRING_GUIDE.md](computer:///mnt/user-data/outputs/LILYGO_T8_WIRING_GUIDE.md) - Complete T8 guide
+ [circuit_diagram_T8.html](computer:///mnt/user-data/outputs/circuit_diagram_T8.html) - T8 visual diagram
+ [LILYGO_T8_COMPARISON.md](computer:///mnt/user-data/outputs/LILYGO_T8_COMPARISON.md) - Pico vs T8 comparison
+ [PROJECT_SUMMARY_T8.md](computer:///mnt/user-data/outputs/PROJECT_SUMMARY_T8.md) - T8 project summary
 
 ### 🔄 Shared Files (Work for Both)
 
 **BLE Libraries:**
-13. [ble_simple_peripheral.py](computer:///mnt/user-data/outputs/ble_simple_peripheral.py) - BLE support
-14. [ble_advertising.py](computer:///mnt/user-data/outputs/ble_advertising.py) - BLE advertising
+ [ble_simple_peripheral.py](computer:///mnt/user-data/outputs/ble_simple_peripheral.py) - BLE support
+ [ble_advertising.py](computer:///mnt/user-data/outputs/ble_advertising.py) - BLE advertising
 
 **Documentation:**
-15. [BATTERY_POWER_GUIDE.md](computer:///mnt/user-data/outputs/BATTERY_POWER_GUIDE.md) - Power analysis
-16. [RESET_BUTTON_GUIDE.md](computer:///mnt/user-data/outputs/RESET_BUTTON_GUIDE.md) - Reset button install
-17. [ANDROID_BLE_APPS_GUIDE.md](computer:///mnt/user-data/outputs/ANDROID_BLE_APPS_GUIDE.md) - Android apps
-18. [MIT_APP_INVENTOR_TUTORIAL.md](computer:///mnt/user-data/outputs/MIT_APP_INVENTOR_TUTORIAL.md) - Build custom app
+10. [BATTERY_POWER_GUIDE.md](computer:///mnt/user-data/outputs/BATTERY_POWER_GUIDE.md) - Power analysis
+11. [RESET_BUTTON_GUIDE.md](computer:///mnt/user-data/outputs/RESET_BUTTON_GUIDE.md) - Reset button install
+12. [ANDROID_BLE_APPS_GUIDE.md](computer:///mnt/user-data/outputs/ANDROID_BLE_APPS_GUIDE.md) - Android apps
+13. [MIT_APP_INVENTOR_TUTORIAL.md](computer:///mnt/user-data/outputs/MIT_APP_INVENTOR_TUTORIAL.md) - Build custom app
 
 ---
 
@@ -109,11 +96,6 @@ Read: [LILYGO_T8_COMPARISON.md](computer:///mnt/user-data/outputs/LILYGO_T8_COMP
 
 ### Step 2: Follow the Right Guide
 
-**For ESP32 Pico:**
-1. [circuit_diagram.html](computer:///mnt/user-data/outputs/circuit_diagram.html) - Visual wiring
-2. [QUICK_REFERENCE.md](computer:///mnt/user-data/outputs/QUICK_REFERENCE.md) - Pin connections
-3. [INSTALLATION_GUIDE.md](computer:///mnt/user-data/outputs/INSTALLATION_GUIDE.md) - Complete setup
-
 **For LILYGO T8:**
 1. [circuit_diagram_T8.html](computer:///mnt/user-data/outputs/circuit_diagram_T8.html) - Visual wiring
 2. [LILYGO_T8_WIRING_GUIDE.md](computer:///mnt/user-data/outputs/LILYGO_T8_WIRING_GUIDE.md) - Complete guide
@@ -135,17 +117,6 @@ Read: [BATTERY_POWER_GUIDE.md](computer:///mnt/user-data/outputs/BATTERY_POWER_G
 
 ## 🔌 Pin Mapping Quick Reference
 
-### ESP32 Pico DevKit
-```
-Keypad Row 1    → GPIO 13
-Keypad Row 2    → GPIO 12
-Keypad Row 3    → GPIO 14
-Keypad Col 1    → GPIO 27
-Keypad Col 2    → GPIO 26
-Keypad Col 3    → GPIO 25
-Keypad Col 4    → GPIO 33
-Relay Control   → GPIO 32
-Reset Button    → EN + GND
 ```
 
 ### LILYGO T8 V1.7
@@ -442,7 +413,7 @@ Your project is complete when:
 
 You now have everything you need:
 - ✅ Complete wiring diagrams
-- ✅ Tested code (2 board types)
+- ✅ Tested code
 - ✅ Battery optimization
 - ✅ Android app options
 - ✅ Troubleshooting guides
@@ -453,7 +424,7 @@ You now have everything you need:
 ---
 
 **Project:** Digital Safe Locker  
-**Versions:** ESP32 Pico + LILYGO T8 V1.7  
+**Versions:** ESP32 LILYGO T8 V1.7  
 **Status:** Production Ready  
 **License:** Open Source (Personal Use)  
 
