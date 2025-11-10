@@ -33,14 +33,15 @@ _UART_SERVICE = (
 
 
 class BLESimplePeripheral:
-    def __init__(self, name="ESP32-BLE"):
+    def __init__(self, name="T8-Lock"):
         self._ble = bluetooth.BLE()
         self._ble.active(True)
         self._ble.irq(self._irq)
         ((self._handle_tx, self._handle_rx),) = self._ble.gatts_register_services((_UART_SERVICE,))
         self._connections = set()
         self._write_callback = None
-        self._payload = advertising_payload(name=name, services=[_UART_UUID])
+        self.device_name = name
+        self.service_uuid = _UART_UUID
         self._advertise()
 
     def _irq(self, event, data):
@@ -68,8 +69,18 @@ class BLESimplePeripheral:
         return len(self._connections) > 0
 
     def _advertise(self, interval_us=500000):
-        print("BT: Advertising...")
-        self._ble.gap_advertise(interval_us, adv_data=self._payload)
+        print("BT: Advertising with two payloads......")
+        adv_data = advertising_payload(name=self.device_name)
+        resp_data = advertising_payload(services=[self.service_uuid])
+        if len(adv_data) <= 31 and len(resp_data) <= 31:
+            print(f"BT: Advertising (Adv Len: {len(adv_data)}, Resp Len: {len(resp_data)})")
+            # Pass BOTH payloads to the gap_advertise function
+            self._ble.gap_advertise(interval_us, adv_data=adv_data, resp_data=resp_data)
+        else:
+            # This should ideally not happen now
+            print(f"Error: Payloads still too long. Adv len: {len(adv_data)}, Resp len: {len(resp_data)}")
+
+        """self._ble.gap_advertise(interval_us, adv_data=self._payload)"""
 
     def on_write(self, callback):
         self._write_callback = callback
