@@ -65,12 +65,17 @@ def check_idle_timeout():
         close_lock()
         led.value(0)
         time.sleep(1)
-        
-        # Configure wake on keypad press (any column pin)
-        # Wake when any column goes LOW (key pressed)
-        esp32.wake_on_ext0(pin=Pin(13), level=esp32.WAKEUP_ANY_HIGH)
-        
-        deepsleep(DEEP_SLEEP_DURATION)
+
+        # Configure wake on ANY keypad button press
+        # Columns are PULL_UP (HIGH when idle, LOW when pressed)
+        # Wake when ANY column pin goes LOW
+        esp32.wake_on_ext1(
+            pins=(Pin(13), Pin(12), Pin(14), Pin(27)),
+            level=esp32.WAKEUP_ALL_LOW
+        )
+
+        # Sleep indefinitely until keypad press (no auto-wake timer)
+        deepsleep()
 
 def reset_activity_timer():
     """Reset the inactivity timer"""

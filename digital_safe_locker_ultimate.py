@@ -74,12 +74,35 @@ def check_idle_timeout():
         print("💤 Entering deep sleep to save battery...")
         close_lock()
         time.sleep(1)
-        deepsleep(DEEP_SLEEP_DURATION)
+
+        # Configure wake on ANY keypad button press
+        # Columns are PULL_UP (HIGH when idle, LOW when pressed)
+        # Wake when ANY column pin goes LOW
+        esp32.wake_on_ext1(
+            pins=(Pin(27), Pin(26), Pin(25), Pin(33)),
+            level=esp32.WAKEUP_ALL_LOW
+        )
+
+        # Sleep indefinitely until keypad press (no auto-wake timer)
+        deepsleep()
 
 def reset_activity_timer():
     """Reset the inactivity timer"""
     global last_activity
     last_activity = time.time()
+
+def check_wakeup_reason():
+    """Check why ESP32 woke up"""
+    try:
+        import machine
+        if machine.reset_cause() == machine.DEEPSLEEP_RESET:
+            print("🔄 Woke from deep sleep")
+            # Brief relay blink to indicate wake
+            relay.value(1)
+            time.sleep(0.2)
+            relay.value(0)
+    except:
+        pass
 
 # ===== PASSWORD MANAGEMENT =====
 def load_password():
@@ -358,6 +381,7 @@ ble.on_write(on_rx)
 print("✅ BLE ready")
 
 load_password()
+check_wakeup_reason()
 
 # ===== MAIN LOOP =====
 def main():
