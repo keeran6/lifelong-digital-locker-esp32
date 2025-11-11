@@ -1,0 +1,35 @@
+# Development and CI/CD Requirements
+# For ESP32 MicroPython Project
+
+# Code Quality & Linting
+pylint>=3.0.0
+pylint-micropython>=0.1.0
+black>=23.0.0
+flake8>=6.0.0
+isort>=5.12.0
+
+# Security & Analysis
+bandit>=1.7.5
+vulture>=2.9.1
+safety>=2.3.5
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+pytest-timeout>=2.1.0
+pytest-xdist>=3.3.0
+
+# ESP32 Tools
+esptool>=4.6.0
+adafruit-ampy>=1.1.0
+mpremote>=1.20.0
+pyserial>=3.5
+
+# Documentation
+sphinx>=7.0.0
+sphinx-rtd-theme>=1.3.0
+
+# Utilities
+pyyaml>=6.0
+toml>=0.10.2
