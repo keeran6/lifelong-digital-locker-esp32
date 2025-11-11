@@ -184,10 +184,11 @@ def on_rx(data):
             password = command[5:]
             if password == CORRECT_PASSWORD:
                 print("✅ Correct BT password!")
+                # Send response BEFORE delay to avoid connection timeout crash
+                ble.send("OK:OPENING\n")
                 open_lock()
                 time.sleep(LOCK_OPEN_TIME)
                 close_lock()
-                ble.send("OK:UNLOCKED\n")
                 failed_attempts = 0
             else:
                 failed_attempts += 1
