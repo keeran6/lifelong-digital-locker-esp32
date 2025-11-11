@@ -265,74 +265,87 @@ def on_rx(data):
     """Handle BLE commands"""
     global failed_attempts, current_password
     reset_activity_timer()
+
+    try:
+        if not data:
+            return
+        command = data.decode().strip()
+        print(f"BT: {command}")
+    except Exception as e:
+        print(f"BT: Decode error: {e}")
+        return
     
-    command = data.decode().strip()
-    print(f"BT: {command}")
-    
-    if command.startswith("PASS:"):
-        password = command[5:]
-        if password == current_password:
-            print("✅ Correct BT password!")
-            open_lock()
-            time.sleep(LOCK_OPEN_TIME)
-            close_lock()
-            ble.send("OK:UNLOCKED\n")
-            failed_attempts = 0
-        else:
-            failed_attempts += 1
-            ble.send(f"ERROR:WRONG_PASSWORD:{failed_attempts}/{MAX_ATTEMPTS}\n")
-    
-    elif command.startswith("CHANGE:"):
-        parts = command.split(":")
-        if len(parts) == 3:
-            old_pass = parts[1]
-            new_pass = parts[2]
-            if old_pass == current_password:
-                if len(new_pass) >= 4:
-                    current_password = new_pass
-                    save_password(current_password)
-                    print("🎉 Password changed via BLE!")
-                    ble.send("OK:PASSWORD_CHANGED\n")
-                else:
-                    ble.send("ERROR:PASSWORD_TOO_SHORT\n")
+    try:
+        if command.startswith("PASS:"):
+            password = command[5:]
+            if password == current_password:
+                print("✅ Correct BT password!")
+                open_lock()
+                time.sleep(LOCK_OPEN_TIME)
+                close_lock()
+                ble.send("OK:UNLOCKED\n")
+                failed_attempts = 0
             else:
-                ble.send("ERROR:WRONG_OLD_PASSWORD\n")
+                failed_attempts += 1
+                ble.send(f"ERROR:WRONG_PASSWORD:{failed_attempts}/{MAX_ATTEMPTS}\n")
+
+        elif command.startswith("CHANGE:"):
+            parts = command.split(":")
+            if len(parts) == 3:
+                old_pass = parts[1]
+                new_pass = parts[2]
+                if old_pass == current_password:
+                    if len(new_pass) >= 4:
+                        current_password = new_pass
+                        save_password(current_password)
+                        print("🎉 Password changed via BLE!")
+                        ble.send("OK:PASSWORD_CHANGED\n")
+                    else:
+                        ble.send("ERROR:PASSWORD_TOO_SHORT\n")
+                else:
+                    ble.send("ERROR:WRONG_OLD_PASSWORD\n")
+            else:
+                ble.send("ERROR:INVALID_FORMAT\n")
+
+        elif command.startswith("RESET:"):
+            admin_pass = command[6:]
+            if admin_pass == ADMIN_PASSWORD:
+                reset_password()
+                ble.send("OK:PASSWORD_RESET\n")
+            else:
+                ble.send("ERROR:WRONG_ADMIN_PASSWORD\n")
+
+        elif command == "OPEN":
+            open_lock()
+            ble.send("OK:OPENED\n")
+
+        elif command == "CLOSE":
+            close_lock()
+            ble.send("OK:CLOSED\n")
+
+        elif command == "TOGGLE":
+            toggle_lock()
+            state = "OPENED" if lock_state else "CLOSED"
+            ble.send(f"OK:{state}\n")
+
+        elif command == "STATUS":
+            state = "OPENED" if lock_state else "CLOSED"
+            uptime = int(time.time() - last_activity)
+            ble.send(f"STATUS:{state},IDLE:{uptime}s\n")
+
+        elif command == "SLEEP":
+            ble.send("OK:ENTERING_SLEEP\n")
+            time.sleep(1)
+            check_idle_timeout()
+
         else:
-            ble.send("ERROR:INVALID_FORMAT\n")
-    
-    elif command.startswith("RESET:"):
-        admin_pass = command[6:]
-        if admin_pass == ADMIN_PASSWORD:
-            reset_password()
-            ble.send("OK:PASSWORD_RESET\n")
-        else:
-            ble.send("ERROR:WRONG_ADMIN_PASSWORD\n")
-    
-    elif command == "OPEN":
-        open_lock()
-        ble.send("OK:OPENED\n")
-    
-    elif command == "CLOSE":
-        close_lock()
-        ble.send("OK:CLOSED\n")
-    
-    elif command == "TOGGLE":
-        toggle_lock()
-        state = "OPENED" if lock_state else "CLOSED"
-        ble.send(f"OK:{state}\n")
-    
-    elif command == "STATUS":
-        state = "OPENED" if lock_state else "CLOSED"
-        uptime = int(time.time() - last_activity)
-        ble.send(f"STATUS:{state},IDLE:{uptime}s\n")
-    
-    elif command == "SLEEP":
-        ble.send("OK:ENTERING_SLEEP\n")
-        time.sleep(1)
-        check_idle_timeout()
-    
-    else:
-        ble.send("ERROR:UNKNOWN_COMMAND\n")
+            ble.send("ERROR:UNKNOWN_COMMAND\n")
+    except Exception as e:
+        print(f"BT: Command error: {e}")
+        try:
+            ble.send(f"ERROR:EXCEPTION:{e}\n")
+        except:
+            pass
 
 # ===== SETUP =====
 print("\n" + "="*50)

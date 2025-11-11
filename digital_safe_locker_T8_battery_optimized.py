@@ -10,6 +10,7 @@ Features:
 """
 
 from machine import Pin, deepsleep, reset
+import machine
 import time
 import bluetooth
 from ble_simple_peripheral import BLESimplePeripheral
@@ -163,48 +164,61 @@ def process_keypad_input(key):
 def on_rx(data):
     global failed_attempts
     reset_activity_timer()
+
+    try:
+        if not data:
+            return
+        command = data.decode().strip().upper()
+        print(f"BT Command: {command}")
+    except Exception as e:
+        print(f"BT: Decode error: {e}")
+        return
     
-    command = data.decode().strip().upper()
-    print(f"BT Command: {command}")
-    
-    if command.startswith("PASS:"):
-        password = command[5:]
-        if password == CORRECT_PASSWORD:
-            print("✅ Correct BT password!")
+    try:
+        if command.startswith("PASS:"):
+            password = command[5:]
+            if password == CORRECT_PASSWORD:
+                print("✅ Correct BT password!")
+                open_lock()
+                time.sleep(LOCK_OPEN_TIME)
+                close_lock()
+                ble.send("OK:UNLOCKED\n")
+                failed_attempts = 0
+            else:
+                failed_attempts += 1
+                ble.send(f"ERROR:WRONG_PASSWORD:{failed_attempts}/{MAX_ATTEMPTS}\n")
+
+        elif command == "OPEN":
             open_lock()
-            time.sleep(LOCK_OPEN_TIME)
+            ble.send("OK:OPENED\n")
+
+        elif command == "CLOSE":
             close_lock()
-            ble.send("OK:UNLOCKED\n")
-            failed_attempts = 0
+            ble.send("OK:CLOSED\n")
+
+        elif command == "TOGGLE":
+            toggle_lock()
+            state = "OPENED" if lock_state else "CLOSED"
+            ble.send(f"OK:{state}\n")
+
+        elif command == "STATUS":
+            state = "OPENED" if lock_state else "CLOSED"
+            uptime = time.time()
+            ble.send(f"STATUS:{state},UPTIME:{uptime}s\n")
+
+        elif command == "SLEEP":
+            ble.send("OK:ENTERING_SLEEP\n")
+            time.sleep(1)
+            check_idle_timeout()
+
         else:
-            failed_attempts += 1
-            ble.send(f"ERROR:WRONG_PASSWORD:{failed_attempts}/{MAX_ATTEMPTS}\n")
-    
-    elif command == "OPEN":
-        open_lock()
-        ble.send("OK:OPENED\n")
-    
-    elif command == "CLOSE":
-        close_lock()
-        ble.send("OK:CLOSED\n")
-    
-    elif command == "TOGGLE":
-        toggle_lock()
-        state = "OPENED" if lock_state else "CLOSED"
-        ble.send(f"OK:{state}\n")
-    
-    elif command == "STATUS":
-        state = "OPENED" if lock_state else "CLOSED"
-        uptime = time.time()
-        ble.send(f"STATUS:{state},UPTIME:{uptime}s\n")
-    
-    elif command == "SLEEP":
-        ble.send("OK:ENTERING_SLEEP\n")
-        time.sleep(1)
-        check_idle_timeout()
-    
-    else:
-        ble.send("ERROR:UNKNOWN_COMMAND\n")
+            ble.send("ERROR:UNKNOWN_COMMAND\n")
+    except Exception as e:
+        print(f"BT: Command error: {e}")
+        try:
+            ble.send(f"ERROR:EXCEPTION:{e}\n")
+        except:
+            pass
 
 # ===== BLUETOOTH SETUP =====
 print("\n" + "="*50)

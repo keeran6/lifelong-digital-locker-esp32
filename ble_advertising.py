@@ -26,6 +26,8 @@ def advertising_payload(limited_disc=False, br_edr=False, name=None, services=No
     )
 
     if name:
+        if isinstance(name, str):
+            name = name.encode('utf-8')
         _append(_ADV_TYPE_NAME, name)
 
     if services:
