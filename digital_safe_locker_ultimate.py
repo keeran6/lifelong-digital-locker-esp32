@@ -353,7 +353,7 @@ print("  ULTIMATE VERSION - Password + Battery")
 print("="*50)
 
 print("Initializing BLE...")
-ble = BLESimplePeripheral("ESP32-SafeLock")
+ble = BLESimplePeripheral("T8-SafeLock")
 ble.on_write(on_rx)
 print("✅ BLE ready")
 
@@ -362,7 +362,7 @@ load_password()
 # ===== MAIN LOOP =====
 def main():
     print("\n" + "="*50)
-    print("   ULTIMATE DIGITAL SAFE LOCKER")
+    print("  DIGITAL SAFE LOCKER")
     print("="*50)
     print(f"Password: {'*' * len(current_password)}")
     print(f"Battery: Optimized (2-3 months)")
