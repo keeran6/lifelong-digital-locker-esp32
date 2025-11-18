@@ -29,7 +29,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pylint
-          pip install micropython-stubs
+          pip install micropython-esp32-stubs
 
       - name: Run pylint on MicroPython files
         run: |
