@@ -1,0 +1,315 @@
+name: ESP32 CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, claude/** ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ created ]
+
+env:
+  ESP32_PORT: /dev/ttyUSB0
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  lint:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint
+          pip install micropython-esp32-stubs
+
+      - name: Run pylint on MicroPython files
+        run: |
+          # Run pylint with MicroPython-specific configuration
+          pylint --rcfile=.pylintrc *.py || true
+        continue-on-error: true
+
+      - name: Check code formatting (optional)
+        run: |
+          pip install black
+          black --check --line-length 100 *.py || true
+        continue-on-error: true
+
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install analysis tools
+        run: |
+          pip install bandit vulture
+
+      - name: Run security checks
+        run: |
+          bandit -r . -ll || true
+        continue-on-error: true
+
+      - name: Check for dead code
+        run: |
+          vulture *.py --min-confidence 80 || true
+        continue-on-error: true
+
+  unit-tests:
+    name: Unit Tests (Mocked)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install test dependencies
+        run: |
+          pip install pytest pytest-cov pytest-mock
+
+      - name: Run unit tests
+        run: |
+          if [ -d "tests" ]; then
+            pytest tests/ -v --cov=. --cov-report=xml --cov-report=html
+          else
+            echo "No tests directory found, skipping"
+          fi
+        continue-on-error: true
+
+      - name: Upload coverage reports
+        if: success()
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+        continue-on-error: true
+
+  hardware-test:
+    name: Hardware Testing (ESP32)
+    runs-on: self-hosted
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        os: [self-hosted]  # Use self-hosted runner with ESP32 connected
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Setup Python using Miniforge (Bypasses APT entirely)
+      - name: Setup Python 3.11 via Mamba
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          python-version: 3.11
+          activate-environment: test-env
+
+      - name: Display Python version
+        shell: bash -l {0} # Required for Conda envs
+        run: python --version
+      
+      - name: Install ESP32 tools
+        run: |
+          pip install esptool adafruit-ampy mpremote pyserial
+
+      - name: Detect ESP32 device
+        id: detect
+        run: |
+          # Try to detect ESP32 on USB
+          if [ -e "$ESP32_PORT" ]; then
+            echo "ESP32 found on $ESP32_PORT"
+            echo "device_found=true" >> $GITHUB_OUTPUT
+          else
+            echo "ESP32 not found on $ESP32_PORT, checking alternatives..."
+            for port in /dev/ttyUSB* /dev/ttyACM* /dev/cu.usbserial* /dev/cu.SLAB_USBtoUART*; do
+              if [ -e "$port" ]; then
+                echo "Found device on $port"
+                echo "ESP32_PORT=$port" >> $GITHUB_ENV
+                echo "device_found=true" >> $GITHUB_OUTPUT
+                break
+              fi
+            done
+          fi
+
+      - name: Run hardware tests
+        if: steps.detect.outputs.device_found == 'true'
+        run: |
+          chmod +x ./scripts/hardware_test.sh
+          ./scripts/hardware_test.sh $ESP32_PORT
+        timeout-minutes: 10
+        continue-on-error: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hardware-test-results
+          path: test-results/
+          retention-days: 7
+        continue-on-error: true
+
+  build-package:
+    name: Build & Package
+    runs-on: ubuntu-latest
+    needs: [lint, static-analysis, unit-tests]
+    if: github.event_name == 'push' || github.event_name == 'release'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Get version info
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION=${{ github.event.release.tag_name }}
+          else
+            VERSION="dev-$(git rev-parse --short HEAD)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Create deployment package
+        run: |
+          mkdir -p dist
+
+          # Package main application files
+          tar -czf dist/esp32-safe-locker-${{ steps.version.outputs.version }}.tar.gz \
+            digital_safe_locker_ultimate.py \
+            digital_safe_locker_T8_battery_optimized.py \
+            digital_safe_locker_T8_enhanced.py \
+            ble_simple_peripheral.py \
+            ble_advertising.py \
+            README.md \
+            --transform 's,^,esp32-safe-locker/,'
+
+          # Create deployment script
+          cat > dist/deploy.sh << 'EOF'
+          #!/bin/bash
+          # ESP32 Safe Locker Deployment Script
+
+          PORT="${1:-/dev/ttyUSB0}"
+          VERSION="${2:-ultimate}"
+
+          echo "Deploying to ESP32 on $PORT..."
+
+          # Select version to deploy
+          case $VERSION in
+            ultimate)
+              MAIN_FILE="digital_safe_locker_ultimate.py"
+              ;;
+            battery)
+              MAIN_FILE="digital_safe_locker_T8_battery_optimized.py"
+              ;;
+            enhanced)
+              MAIN_FILE="digital_safe_locker_T8_enhanced.py"
+              ;;
+            *)
+              echo "Unknown version: $VERSION"
+              exit 1
+              ;;
+          esac
+
+          # Upload files using mpremote or ampy
+          if command -v mpremote &> /dev/null; then
+            echo "Using mpremote..."
+            mpremote connect $PORT fs cp ble_advertising.py :
+            mpremote connect $PORT fs cp ble_simple_peripheral.py :
+            mpremote connect $PORT fs cp $MAIN_FILE :main.py
+            echo "Deployment complete!"
+          elif command -v ampy &> /dev/null; then
+            echo "Using ampy..."
+            ampy --port $PORT put ble_advertising.py
+            ampy --port $PORT put ble_simple_peripheral.py
+            ampy --port $PORT put $MAIN_FILE main.py
+            echo "Deployment complete!"
+          else
+            echo "Error: Neither mpremote nor ampy found. Please install one:"
+            echo "  pip install mpremote"
+            echo "  pip install adafruit-ampy"
+            exit 1
+          fi
+          EOF
+
+          chmod +x dist/deploy.sh
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum * > checksums.txt
+          cat checksums.txt
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32-safe-locker-${{ steps.version.outputs.version }}
+          path: dist/
+          retention-days: 90
+
+      - name: Upload release assets
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/deploy.sh
+            dist/checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release-notes:
+    name: Generate Release Notes
+    runs-on: ubuntu-latest
+    needs: [build-package]
+    if: github.event_name == 'release'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "## What's Changed" > RELEASE_NOTES.md
+          git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s (%h)" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "## Files Included" >> RELEASE_NOTES.md
+          echo "- digital_safe_locker_ultimate.py - Full featured version with password management and battery optimization" >> RELEASE_NOTES.md
+          echo "- digital_safe_locker_T8_battery_optimized.py - Battery optimized version" >> RELEASE_NOTES.md
+          echo "- digital_safe_locker_T8_enhanced.py - Enhanced version with password management" >> RELEASE_NOTES.md
+          echo "- ble_simple_peripheral.py - BLE communication module" >> RELEASE_NOTES.md
+          echo "- ble_advertising.py - BLE advertising helper" >> RELEASE_NOTES.md
+          cat RELEASE_NOTES.md
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: RELEASE_NOTES.md
