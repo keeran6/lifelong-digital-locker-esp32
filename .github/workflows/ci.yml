@@ -115,11 +115,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: setup python Use deadsnakes action for ARM64
+        uses: deadsnakes/action@v3.2.0 # Use the latest version available
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
+          python-version: '3.11'
+      - name: Display Python version
+        run: python --version
+      
       - name: Install ESP32 tools
         run: |
           pip install esptool adafruit-ampy mpremote pyserial
