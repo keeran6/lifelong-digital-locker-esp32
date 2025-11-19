@@ -115,11 +115,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: setup python Use deadsnakes action for ARM64
-        uses: deadsnakes/action@v3.2.0 # Use the latest version available
+      # Setup Python using Miniforge (Bypasses APT entirely)
+      - name: Setup Python 3.11 via Mamba
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: '3.11'
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          python-version: 3.11
+          activate-environment: test-env
+
       - name: Display Python version
+        shell: bash -l {0} # Required for Conda envs
         run: python --version
       
       - name: Install ESP32 tools
